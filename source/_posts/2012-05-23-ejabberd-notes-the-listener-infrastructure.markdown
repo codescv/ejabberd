@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "[ejabberd hacking] The Listener Infrastructure"
+title: "The Listener Infrastructure (ejabberd hacking series)"
 date: 2012-05-23 13:49
 comments: true
 categories: ejabberd
