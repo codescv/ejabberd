@@ -26,7 +26,7 @@
 
 -include("ejabberd.hrl").
 
--record(state, {sockmod, csock}).
+-record(state, {sockmod, csock, opts}).
 
 %%%===================================================================
 %%% API
@@ -73,7 +73,8 @@ start_link(SockData, Opts) ->
 %%--------------------------------------------------------------------
 init([{SockMod, CSock}, Opts]) ->
     ?ERROR_MSG("start with sockmod: ~p csock: ~p opts: ~p", [SockMod, CSock, Opts]),
-    State = #state{sockmod=SockMod, csock=CSock},
+    State = #state{sockmod=SockMod, csock=CSock, opts=Opts},
+    set_opts(State),
     activate_socket(State),
     {ok, state_name, State}.
 
@@ -211,3 +212,10 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 activate_socket(#state{csock=CSock}) ->
     inet:setopts(CSock, [{active, once}]).
+
+set_opts(#state{csock=CSock, opts=Opts}) ->
+    Opts1 = lists:filter(fun(inet) -> false;
+			    ({ip, _}) -> false;
+			    (_) -> true
+			 end, Opts),
+    inet:setopts(CSock, Opts1).
