@@ -16,6 +16,8 @@
 -export([start/2,
 	 socket_type/0]).
 
+-export([udp_recv/5]).
+
 %% gen_fsm callbacks
 -export([init/1, state_name/2, state_name/3, handle_event/3,
 	 handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
@@ -31,11 +33,14 @@
 %%%===================================================================
 
 start(SockData, Opts) ->
-
     start_link(SockData, Opts).
 
 socket_type() ->
     raw.
+
+udp_recv(Socket, Addr, Port, Packet, Opts) ->
+    ?ERROR_MSG("udp receive: socket ~p addr ~p port ~p packet ~p opts ~p", [Socket, Addr, Port, Packet, Opts]),
+    gen_udp:send(Socket, Addr, Port, Packet).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -67,7 +72,7 @@ start_link(SockData, Opts) ->
 %% @end
 %%--------------------------------------------------------------------
 init([{SockMod, CSock}, Opts]) ->
-    ?PRINT("start with sockmod: ~p csock: ~p opts: ~p", [SockMod, CSock, Opts]),
+    ?ERROR_MSG("start with sockmod: ~p csock: ~p opts: ~p", [SockMod, CSock, Opts]),
     State = #state{sockmod=SockMod, csock=CSock},
     activate_socket(State),
     {ok, state_name, State}.
@@ -162,11 +167,15 @@ handle_sync_event(_Event, _From, StateName, State) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_info({_, CSock, Packet}, StateName, #state{sockmod=SockMod}=State) ->
-    ?PRINT("received: ~p", [Packet]),
+    ?ERROR_MSG("received: ~p", [Packet]),
     SockMod:send(CSock, Packet),
     activate_socket(State),
     {next_state, StateName, State};
+handle_info({tcp_closed, _CSock}, _StateName, State) ->
+    ?ERROR_MSG("client closed: ~p", [State]),
+    {stop, normal, State};
 handle_info(_Info, StateName, State) ->
+    ?ERROR_MSG("received: ~p", [_Info]),
     {next_state, StateName, State}.
 
 %%--------------------------------------------------------------------
@@ -181,6 +190,7 @@ handle_info(_Info, StateName, State) ->
 %% @end
 %%--------------------------------------------------------------------
 terminate(_Reason, _StateName, _State) ->
+    ?ERROR_MSG("terminated ~p", [_Reason]),
     ok.
 
 %%--------------------------------------------------------------------
