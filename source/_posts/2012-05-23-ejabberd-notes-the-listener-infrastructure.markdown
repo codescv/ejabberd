@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The Listener Infrastructure (ejabberd hacking series)"
+title: "The Ejabberd Socket Infrastructure"
 date: 2012-05-23 13:49
 comments: true
 categories: ejabberd
@@ -29,7 +29,7 @@ That said, let's examine the listener/socket code of ejabberd first, throwing as
 ## Binding listener ports
 In ejabberd, the whole server is packaged into a single OTP application.
 
-The modules related to ejabberd's listener infrastructure are: ejabberd_listener, ejabberd_socket and ejabberd_receiver.
+The modules related to ejabberd's socket infrastructure are: ejabberd_listener, ejabberd_socket and ejabberd_receiver.
 
 The ejabberd_listener listens on every port specified in the ejabberd configuration file, spawns a process for each port and then accepts the sockets. When it finishes, it starts ejabberd_socket which in turn starts two processes: ejabberd_receiver and logic module according to the config (ejabberd_c2s for 5222, for example). The ejabberd_receiver is responsible for receiving any incoming packets and then forwarding them to the logic module. The logic module parses and handles the packets, and sends responses and requests using the ejabberd_socket utils.
 
@@ -166,7 +166,7 @@ What 'SockMod:controlling_process(Socket, Receiver)' does is to direct all data 
 In a word, ejabberd starts a receiver and a handler when a socket is accepted, the receiver handles all incoming data, does some preprocessing(such as parsing the XML) and forward the message to the handler, the handler decides how to handle the message, and (maybe) use the ejabberd_socket util to send response data. If you want to extend the ejabberd to use other protocols than XMPP: this is the place to start. Write a customized receiver module to parse the protocol, a customized handler module to handle all the requests and you are done. More on this topic later.
 
 ## To sum up
-We have taken a quick tour through the listeners infrastructure in ejabberd. We learned that the ejabberd uses three modules: ejabberd_listener, ejabberd_socket and ejabberd_receiver to handle all the socket related stuff. ejabberd_listener binds and listens on ports, ejabberd_socket starts the receiver and the handler, and provides utils for outgoing data, the receiver handles and parses all incoming data, and forwards messages to the logic module. The logics, on the other handle, are handled by logic modules accroding to the config file. There are, however, many things that we left out, including:
+We have taken a quick tour through the socket infrastructure in ejabberd. We learned that the ejabberd uses three modules: ejabberd_listener, ejabberd_socket and ejabberd_receiver to handle all the socket related stuff. ejabberd_listener binds and listens on ports, ejabberd_socket starts the receiver and the handler, and provides utils for outgoing data, the receiver handles and parses all incoming data, and forwards messages to the logic module. The logics, on the other handle, are handled by logic modules accroding to the config file. There are, however, many things that we left out, including:
 
 1. customization of receiver/logic modules.
 2. congestion control (shapers).
