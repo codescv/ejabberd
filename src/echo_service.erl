@@ -19,7 +19,7 @@
 -export([udp_recv/5]).
 
 %% gen_fsm callbacks
--export([init/1, state_name/2, state_name/3, handle_event/3,
+-export([init/1, process/2, process/3, handle_event/3,
 	 handle_sync_event/4, handle_info/3, terminate/3, code_change/4]).
 
 -define(SERVER, ?MODULE).
@@ -36,7 +36,7 @@ start(SockData, Opts) ->
     start_link(SockData, Opts).
 
 socket_type() ->
-    raw.
+    xml_stream.
 
 udp_recv(Socket, Addr, Port, Packet, Opts) ->
     ?ERROR_MSG("udp receive: socket ~p addr ~p port ~p packet ~p opts ~p", [Socket, Addr, Port, Packet, Opts]),
@@ -75,7 +75,7 @@ init([{SockMod, CSock}, Opts]) ->
     ?ERROR_MSG("start with sockmod: ~p csock: ~p opts: ~p", [SockMod, CSock, Opts]),
     State = #state{sockmod=SockMod, csock=CSock, opts=Opts},
     NewState = set_opts(State),
-    {ok, state_name, NewState}.
+    {ok, process, NewState}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -92,8 +92,13 @@ init([{SockMod, CSock}, Opts]) ->
 %%                   {stop, Reason, NewState}
 %% @end
 %%--------------------------------------------------------------------
-state_name(_Event, State) ->
-    {next_state, state_name, State}.
+process({xmlstreamelement,El}, #state{sockmod=SockMod, csock=CSock} = State) -> 
+    ?ERROR_MSG("element: ~p ~p ~p", [SockMod, CSock, El]), 
+    SockMod:send(CSock, xml:element_to_binary(El)),
+    {next_state, process, State};
+process(Event, State) ->
+    ?ERROR_MSG("event ~p ~p", [Event, State]),
+    {next_state, process, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -113,9 +118,9 @@ state_name(_Event, State) ->
 %%                   {stop, Reason, Reply, NewState}
 %% @end
 %%--------------------------------------------------------------------
-state_name(_Event, _From, State) ->
+process(_Event, _From, State) ->
     Reply = ok,
-    {reply, Reply, state_name, State}.
+    {reply, Reply, process, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -218,11 +223,15 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-activate_socket(#state{csock={tlssock, _, _}=TLSSock}) ->
+activate_socket(#state{sockmod=ejabberd_socket}) ->
+    ok;
+activate_socket(#state{sockmod=tls, csock=TLSSock}) ->
     tls:setopts(TLSSock, [{active, once}]);
-activate_socket(#state{csock=CSock}) ->
+activate_socket(#state{sockmod=gen_tcp, csock=CSock}) ->
     inet:setopts(CSock, [{active, once}]).
 
+set_opts(#state{sockmod=ejabberd_socket}=State) ->
+    State;
 set_opts(#state{csock=CSock, opts=Opts} = State) ->
     TLSEnabled = lists:member(tls, Opts),
     if
