@@ -74,9 +74,8 @@ start_link(SockData, Opts) ->
 init([{SockMod, CSock}, Opts]) ->
     ?ERROR_MSG("start with sockmod: ~p csock: ~p opts: ~p", [SockMod, CSock, Opts]),
     State = #state{sockmod=SockMod, csock=CSock, opts=Opts},
-    set_opts(State),
-    activate_socket(State),
-    {ok, state_name, State}.
+    NewState = set_opts(State),
+    {ok, state_name, NewState}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -167,9 +166,18 @@ handle_sync_event(_Event, _From, StateName, State) ->
 %%                   {stop, Reason, NewState}
 %% @end
 %%--------------------------------------------------------------------
-handle_info({_, CSock, Packet}, StateName, #state{sockmod=SockMod}=State) ->
-    ?ERROR_MSG("received: ~p", [Packet]),
-    SockMod:send(CSock, Packet),
+handle_info({_, _, Packet}, StateName, #state{sockmod=SockMod, csock=CSock}=State) ->
+    case SockMod of
+        tls ->
+            case tls:recv_data(CSock, Packet) of
+                {_, <<>>} ->
+                    ok;
+                {_, Data} ->
+                    SockMod:send(CSock, Data)
+            end;
+        _ ->
+            SockMod:send(CSock, Packet)
+    end,
     activate_socket(State),
     {next_state, StateName, State};
 handle_info({tcp_closed, _CSock}, _StateName, State) ->
@@ -210,12 +218,35 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+activate_socket(#state{csock={tlssock, _, _}=TLSSock}) ->
+    tls:setopts(TLSSock, [{active, once}]);
 activate_socket(#state{csock=CSock}) ->
     inet:setopts(CSock, [{active, once}]).
 
-set_opts(#state{csock=CSock, opts=Opts}) ->
-    Opts1 = lists:filter(fun(inet) -> false;
-			    ({ip, _}) -> false;
-			    (_) -> true
-			 end, Opts),
-    inet:setopts(CSock, Opts1).
+set_opts(#state{csock=CSock, opts=Opts} = State) ->
+    TLSEnabled = lists:member(tls, Opts),
+    if
+        TLSEnabled ->
+            TLSOpts = lists:filter(fun({certfile, _}) -> true;
+                                      (_) -> false
+                                   end, 
+                                   [verify_none | Opts]),
+            {ok, TLSSock} = tls:tcp_to_tls(CSock, TLSOpts),
+            NewState = State#state{sockmod=tls, csock=TLSSock},
+            activate_socket(NewState),
+            NewState;
+        true ->
+            Opts1 = lists:filter(fun(inet) -> false;
+                                    (tls) -> false;
+                                    ({ip, _}) -> false;
+                                    (_) -> true
+                                 end, Opts),
+            inet:setopts(CSock, Opts1),
+            activate_socket(State),
+            State
+    end.
+
+
+
+
+
