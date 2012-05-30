@@ -3,7 +3,7 @@ layout: post
 title: "More on Echo Service: Using TLS and XML Streams"
 date: 2012-05-29 15:27
 comments: true
-categories: 
+categories: ejabberd
 
 ---
 
@@ -70,7 +70,7 @@ set_opts(#state{csock=CSock, opts=Opts} = State) ->
 
 in set_opts/1, we use tls:tcp_to_tls/2 to transform the accepted tcp socket in to a tls socket, then we use tls:recv_data/2 to receive all the tls data. tls:tls_recv_data will automatically do the handshakes needed, returning data if presents (handshake data excluded). Finally, we use tls:send/2 to send any data back to the client.
 
-*Note*: complete code listing available from [git://git@github.com:eshock/ejabberd.git](git@github.com:eshock/ejabberd.git) on branch _echo_service_.
+*Note*: complete code listing available from <https://github.com/eshock/ejabberd> on branch _echo_service_.
 
 ## Using xml_stream
 Now let's take our echo service up to the next level: what about receiving xml streams as input , and echoing xml stanzas?
@@ -141,7 +141,7 @@ If everything goes well, the server answers with reply:
     
     <body>hello</body>
 
-*Note*: complete code listing available at: [git://git@github.com:eshock/ejabberd.git](git@github.com:eshock/ejabberd.git) on branch _xml_stream_echo_service_.
+*Note*: complete code listing available at: <https://github.com/eshock/ejabberd> on branch _xml_stream_echo_service_.
 
 ## To sum up
 We have modified our echo service module to accept tls connections as well as xml_stream stanzas. Next time we'll be talking about something else, but also fun! 
