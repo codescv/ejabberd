@@ -1,0 +1,10 @@
+ejabberd - Chi Zhang's fork
+
+This repository contains all the code samples from my [ejabberd hacking blog](http://eshock.github.com).
+
+To view the samples, check out the _branches_ noted in the blog.
+
+You are free to use any code if you want.
+
+If you have any questions, please send me an email: <elecpaoao@gmail.com>.
+
