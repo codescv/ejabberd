@@ -278,7 +278,7 @@ We have written a very simple echo service to learn how to use the ejabberd's so
 
 The above questions are left out as an exercise. Hack on!
 
-*Note*: All the code in this blog can be accessed at: [git://github.com/eshock/ejabberd.git](git://github.com/eshock/ejabberd.git) on branch echo_service.
+*Note*: All the code in this blog can be accessed at: <https://github.com/eshock/ejabberd> on branch echo_service.
 
 
 
