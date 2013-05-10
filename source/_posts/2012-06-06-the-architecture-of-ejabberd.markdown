@@ -10,7 +10,7 @@ categories: ejabberd
 We have taken a quick tour through the socket infrastructure provided with ejabberd, and wrote a few listeners as an exercise. This time let's take a look at the ejabberd as a whole and try to figure out what it is about.
 
 ## Overview
-![The ejabberd architecture overview](images/ejabberd_overview.png "Ejabberd Overview")
+![The ejabberd architecture overview](/images/ejabberd_overview.png "Ejabberd Overview")
 
 Like many servers, ejabberd can inherently be broken up into three layers:
 
