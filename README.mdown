@@ -1,6 +1,6 @@
 ejabberd - Chi Zhang's fork
 
-This repository contains all the code samples from my [ejabberd hacking blog](http://eshock.github.com).
+This repository contains all the code samples from my [ejabberd hacking blog](http://eshock.github.io/ejabberd/).
 
 To view the samples, check out the _branches_ noted in the blog.
 
