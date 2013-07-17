@@ -1,102 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
 
-<!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  <title>Hacking is great fun.</title>
-  <meta name="author" content="Chi Zhang">
-
-  
-  <meta name="description" content="Problem Given an array of integers, find two numbers such that they add up to a specific target number. The function twoSum should return indices of &hellip;">
-  
-
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  
-  <link rel="canonical" href="http://eshock.github.io/ejabberd">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="/javascripts/ender.js"></script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <link href="/atom.xml" rel="alternate" title="Hacking is great fun." type="application/atom+xml">
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-
-  
-
-</head>
-
-<body   >
-  <header role="banner"><hgroup>
-  <h1><a href="/">Hacking is great fun.</a></h1>
-  
-    <h2>You can do anything you set your mind to.</h2>
-  
-</hgroup>
-
-</header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-  
-<form action="http://google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="q" value="site:eshock.github.io/ejabberd" />
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-  
-<ul class="main-navigation">
-  <li><a href="/">Blog</a></li>
-  <li><a href="/blog/archives">Archives</a></li>
-  <li><a href="https://github.com/eshock">Repo</a></li>
-</ul>
-
-</nav>
-  <div id="main">
-    <div id="content">
-      <div class="blog-index">
-  
-  
-  
-    <article>
-      
-  <header>
+  <title><![CDATA[Hacking is great fun.]]></title>
+  <link href="http://eshock.github.io/ejabberd/atom.xml" rel="self"/>
+  <link href="http://eshock.github.io/ejabberd/"/>
+  <updated>2013-07-17T16:45:42+08:00</updated>
+  <id>http://eshock.github.io/ejabberd/</id>
+  <author>
+    <name><![CDATA[Chi Zhang]]></name>
     
-      <h1 class="entry-title"><a href="/blog/2013/04/29/two-sum/">Two Sum</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
 
   
-
-
-<time datetime="2013-04-29T15:47:00+08:00" pubdate data-updated="true">Apr 29<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/04/29/two-sum/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>Problem</h2>
+  <entry>
+    <title type="html"><![CDATA[Two Sum]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2013/04/29/two-sum/"/>
+    <updated>2013-04-29T15:47:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2013/04/29/two-sum</id>
+    <content type="html"><![CDATA[<h2>Problem</h2>
 
 <p>Given an array of integers, find two numbers such that they add up to a specific target number.</p>
 
@@ -126,7 +48,7 @@ while a[i] + a[j] != target:
 
 <p>Why does this algorithm work? It seems obvious but it takes time to prove it correct. Look at the graph below:</p>
 
-<p><img src="/images/twosum.png" title="the loop invarience" alt="the loop invarience" /></p>
+<p><img src="http://eshock.github.io/ejabberd/images/twosum.png" title="the loop invarience" alt="the loop invarience" /></p>
 
 <p>We have the invariance: for any 0 &lt;= x &lt; i and j &lt; y &lt; n, a[x] + a[y] != target. Initially i = 0, j = n-1 and this is true. Next we want to prove when a[i] + a[j] &lt; target, then for any 0 &lt;= x &lt; i+1 and j &lt; y &lt; n, a[x] + a[y] != target. If x &lt; i, this is true due to the invariance before the iteration. If x = i, notice for j to be here, there must be some number 0 &lt;= x0 &lt; i such that a[x0] + a[j+1] > target. Hence, a[i] + a[y] >= a[x0] + a[j+1] > target. This means, for x = i, a[x] + a[y] != target. Thus for any 0 &lt;= x &lt; i+1 and j &lt; y &lt; n, a[x] + a[y] != target, the invariance is kept.</p>
 
@@ -263,48 +185,19 @@ while a[i] + a[j] != target:
 
 
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/06/06/the-architecture-of-ejabberd/">The Architecture of Ejabberd</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-06-06T17:39:00+08:00" pubdate data-updated="true">Jun 6<span>th</span>, 2012</time>
-        
-         | <a href="/blog/2012/06/06/the-architecture-of-ejabberd/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>We have taken a quick tour through the socket infrastructure provided with ejabberd, and wrote a few listeners as an exercise. This time let&rsquo;s take a look at the ejabberd as a whole and try to figure out what it is about.</p>
+  <entry>
+    <title type="html"><![CDATA[The Architecture of Ejabberd]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd/"/>
+    <updated>2012-06-06T17:39:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd</id>
+    <content type="html"><![CDATA[<p>We have taken a quick tour through the socket infrastructure provided with ejabberd, and wrote a few listeners as an exercise. This time let&rsquo;s take a look at the ejabberd as a whole and try to figure out what it is about.</p>
 
 <h2>Overview</h2>
 
-<p><img src="/images/ejabberd_overview.png" title="Ejabberd Overview" alt="The ejabberd architecture overview" /></p>
+<p><img src="http://eshock.github.io/ejabberd/images/ejabberd_overview.png" title="Ejabberd Overview" alt="The ejabberd architecture overview" /></p>
 
 <p>Like many servers, ejabberd can inherently be broken up into three layers:</p>
 
@@ -346,44 +239,15 @@ while a[i] + a[j] != target:
 <h2>The Interface Layer</h2>
 
 <p>This layer handles incoming data from and outgoing data from the client. Its main functionaly is to listen on a local port waiting for client connections, establish a connection any clients or servers when necessary, and exchange data. It supports TCP/TLS connections as well as UDP transport, as is described in our last discussions. It serves as the interface between the outer world and the ejabberd server.</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams/">More on Echo Service: Using TLS and XML Streams</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-05-29T15:27:00+08:00" pubdate data-updated="true">May 29<span>th</span>, 2012</time>
-        
-         | <a href="/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>Using TLS</h2>
+  <entry>
+    <title type="html"><![CDATA[More on Echo Service: Using TLS and XML Streams]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams/"/>
+    <updated>2012-05-29T15:27:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams</id>
+    <content type="html"><![CDATA[<h2>Using TLS</h2>
 
 <p>OK. We have written a simple echo service, serving both on tcp and udp. Now we want our echo service to be working for TLS, too.</p>
 
@@ -626,44 +490,15 @@ while a[i] + a[j] != target:
 <h2>To sum up</h2>
 
 <p>We have modified our echo service module to accept tls connections as well as xml_stream stanzas. Next time we&rsquo;ll be talking about something else, but also fun!</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/05/25/writing-a-simple-echo-service-module/">Writing a Simple Echo Service Module</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-05-25T09:08:00+08:00" pubdate data-updated="true">May 25<span>th</span>, 2012</time>
-        
-         | <a href="/blog/2012/05/25/writing-a-simple-echo-service-module/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In this blog, I will continue my discussion on ejabberd&rsquo;s socket infrastructure.
+  <entry>
+    <title type="html"><![CDATA[Writing a Simple Echo Service Module]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/05/25/writing-a-simple-echo-service-module/"/>
+    <updated>2012-05-25T09:08:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/05/25/writing-a-simple-echo-service-module</id>
+    <content type="html"><![CDATA[<p>In this blog, I will continue my discussion on ejabberd&rsquo;s socket infrastructure.
 For the sake of simplicity, let&rsquo;s write a simple echo service module, which receives any packet from the client, and echo the packet back.</p>
 
 <h2>Register our listener</h2>
@@ -1150,44 +985,15 @@ For the sake of simplicity, let&rsquo;s write a simple echo service module, whic
 <p>The above questions are left out as an exercise. Hack on!</p>
 
 <p><em>Note</em>: All the code in this blog can be accessed at: <a href="https://github.com/eshock/ejabberd">https://github.com/eshock/ejabberd</a> on branch echo_service.</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure/">The Ejabberd Socket Infrastructure</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-05-23T13:49:00+08:00" pubdate data-updated="true">May 23<span>rd</span>, 2012</time>
-        
-         | <a href="/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Welcome to my first blog about ejabberd source code hacking. In these series of blogs, I want to take notes about how the <a href="http://www.ejabberd.im/">ejabberd</a> works, and how to hack it to get customized features.</p>
+  <entry>
+    <title type="html"><![CDATA[The Ejabberd Socket Infrastructure]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure/"/>
+    <updated>2012-05-23T13:49:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure</id>
+    <content type="html"><![CDATA[<p>Welcome to my first blog about ejabberd source code hacking. In these series of blogs, I want to take notes about how the <a href="http://www.ejabberd.im/">ejabberd</a> works, and how to hack it to get customized features.</p>
 
 <p>The source code version in discussion is ejabberd 2.1.10 release, which is the latest stable version at this time.</p>
 
@@ -1462,44 +1268,15 @@ For the sake of simplicity, let&rsquo;s write a simple echo service module, whic
 
 
 <p>So get your hands on the code piece by piece, make discoveries, and have fun! :)</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/05/22/how-to-set-up-octopress-with-github-on-mac-os-x/">How to Set Up Octopress With Github (on Mac OS X)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-05-22T21:39:00+08:00" pubdate data-updated="true">May 22<span>nd</span>, 2012</time>
-        
-         | <a href="/blog/2012/05/22/how-to-set-up-octopress-with-github-on-mac-os-x/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Octopress is a blogging framework for hackers. It supports creating
+  <entry>
+    <title type="html"><![CDATA[How to set up octopress with github (on Mac OS X)]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/05/22/how-to-set-up-octopress-with-github-on-mac-os-x/"/>
+    <updated>2012-05-22T21:39:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/05/22/how-to-set-up-octopress-with-github-on-mac-os-x</id>
+    <content type="html"><![CDATA[<p>Octopress is a blogging framework for hackers. It supports creating
 pages using the markdown style, and deploying the site on github.</p>
 
 <h2>Set up github site</h2>
@@ -1571,44 +1348,15 @@ rake deploy
 
 <pre><code>git push origin source
 </code></pre>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/05/21/hello-world/">Hello_world</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-05-21T23:07:00+08:00" pubdate data-updated="true">May 21<span>st</span>, 2012</time>
-        
-         | <a href="/blog/2012/05/21/hello-world/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>hello world!</h2>
+  <entry>
+    <title type="html"><![CDATA[hello_world]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/05/21/hello-world/"/>
+    <updated>2012-05-21T23:07:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/05/21/hello-world</id>
+    <content type="html"><![CDATA[<h2>hello world!</h2>
 
 <figure class='code'><figcaption><span>hello_world.c </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -1629,114 +1377,7 @@ rake deploy
 
 
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
-<aside class="sidebar">
-  
-    <section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2013/04/29/two-sum/">Two Sum</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/06/06/the-architecture-of-ejabberd/">The Architecture of Ejabberd</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams/">More on Echo Service: Using TLS and XML Streams</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/05/25/writing-a-simple-echo-service-module/">Writing a Simple Echo Service Module</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure/">The Ejabberd Socket Infrastructure</a>
-      </li>
-    
-  </ul>
-</section>
-
-
-
-
-
-  
-</aside>
-
-    </div>
-  </div>
-  <footer role="contentinfo"><p>
-  Copyright &copy; 2013 - Chi Zhang -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
-</p>
-
-</footer>
-  
-
-<script type="text/javascript">
-      var disqus_shortname = 'eshockgithubio';
-      
-        
-        var disqus_script = 'count.js';
-      
-    (function () {
-      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    }());
-</script>
-
-
-
-<div id="fb-root"></div>
-<script>(function(d, s, id) {
-  var js, fjs = d.getElementsByTagName(s)[0];
-  if (d.getElementById(id)) {return;}
-  js = d.createElement(s); js.id = id;
-  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
-  fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
-
-
-
-  <script type="text/javascript">
-    (function() {
-      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
-      script.src = 'https://apis.google.com/js/plusone.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
-    })();
-  </script>
-
-
-
-  <script type="text/javascript">
-    (function(){
-      var twitterWidgets = document.createElement('script');
-      twitterWidgets.type = 'text/javascript';
-      twitterWidgets.async = true;
-      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
-      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
-    })();
-  </script>
-
-
-
-
-
-</body>
-</html>
+</feed>

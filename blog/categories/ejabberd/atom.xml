@@ -1,0 +1,1343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: ejabberd | Hacking is great fun.]]></title>
+  <link href="http://eshock.github.io/ejabberd/blog/categories/ejabberd/atom.xml" rel="self"/>
+  <link href="http://eshock.github.io/ejabberd/"/>
+  <updated>2013-07-17T16:45:42+08:00</updated>
+  <id>http://eshock.github.io/ejabberd/</id>
+  <author>
+    <name><![CDATA[Chi Zhang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[The Architecture of Ejabberd]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd/"/>
+    <updated>2012-06-06T17:39:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd</id>
+    <content type="html"><![CDATA[<p>We have taken a quick tour through the socket infrastructure provided with ejabberd, and wrote a few listeners as an exercise. This time let&rsquo;s take a look at the ejabberd as a whole and try to figure out what it is about.</p>
+
+<h2>Overview</h2>
+
+<p><img src="/images/ejabberd_overview.png" title="Ejabberd Overview" alt="The ejabberd architecture overview" /></p>
+
+<p>Like many servers, ejabberd can inherently be broken up into three layers:</p>
+
+<ul>
+<li><em>The Data Layer.</em> This layer handles how data get stored in databases, and ensures the integrity and constraints of data.</li>
+<li><em>The Logic Layer.</em> This layer is the most complicated of all. It handles all the XMPP logics, as well as many other features, e.g.: http bindings, access controls, extensible modules and hooks, etc.</li>
+<li><em>The Interface Layer.</em> This is the layer we have just talked about. It handles all the incoming data from and the outgoing data to the client.</li>
+</ul>
+
+
+<h2>The Data Layer</h2>
+
+<p>Ejabberd primarily use <a href="http://www.erlang.org/doc/man/mnesia.html">mnesia</a> as its &ldquo;database&rdquo;. Mnesia is in fact a high-performance key-value pair storage system built into the erlang library. It provides many features such as:</p>
+
+<ul>
+<li>Replication. Tables may be replicated at several nodes.</li>
+<li>Atomic transactions. A series of table manipulation operations can be grouped into a single atomic transaction.</li>
+<li>Location transparency. Programs can be written without knowledge of the actual location of data.</li>
+<li>Extremely fast real time data searches.</li>
+</ul>
+
+
+<p>Some of its features, such as replication and realtime searches, make it eligible for an extremely extensible database system. However, ejabberd does not enforce its use; it provides ODBC interfaces to allow utilizing of other databases whenever possible. For example, sometimes it might be more convienient to allow the user to authenticate using data stored in an existing database server, or there may be some relational data that need to be used for some purpose. Generally, mnesia is suitable for real fast key-value searches, but performs pretty badly when you use it for &ldquo;relational&rdquo; lookups (using the mnesia:select the wrong way). Avoid relational data whenever possible (use key lookup) if you want to make good use of it.</p>
+
+<h2>The Logic Layer</h2>
+
+<p>The logic layer is the main and most import part of the ejabberd system. Some of its functionalities include:</p>
+
+<ul>
+<li><em>Jabber Logics.</em> The client to server connection (typically on tcp/5222) is handled by the module ejabberd_c2s. The server to server connection (typically on tcp/5269) is handled by the modules ejabberd_s2s, ejabberd_s2s_in, ejabber_s2s_out. The HTTP bindings are handled by the ejabberd_http module.</li>
+<li><em>Router.</em> The router handles the routing of most of the messages, i.e., when a Jabber client sends a <message> to another entity, how is the message routed to the correct destination? First ejabberd determines whether the message is a local or a remote one. It does so by looking at the &ldquo;to&rdquo; attribute to see if the host implied by the &ldquo;to&rdquo; attribute is hosted in itself. If so, the message is local; and is handled by ejabberd_local; otherwise it is treated as an s2s message.</li>
+<li><em>Modules.</em> In additional to the core Jabber and Router logics, there is a large part of the ejabberd which can be plugged in only when necessary, and they are called <em>modules</em>. Modules can be started / stopped dynamically at any time, thus making the ejabberd server highly extensible even at runtime. Modules are widely used for various <iq> extensions (the so-called &lsquo;XEP&rsquo;s).</li>
+<li><em>Hooks</em>. You want to change the core logics in the ejabberd server? No problem. Hooks are everywhere to help you. A hook is a way by which you can change the behaviour of ejabberd by injecting your new code into the system, without changing any existing code. For example, if you want to roll up your message filter to filter out messages you don&rsquo;t want, you can add a module hooking to the &ldquo;filter_packet/3&rdquo; hook. If you want to keep track of all the messages clients sent, you can write a function hooking to &lsquo;user_send_packet/3&rsquo;.</li>
+<li><em>Access Control.</em> All users (including real jabber client users as well as  administrators) are stored the same way in ejabberd. Their privileges are determined by the <em>groups</em> they belong to. Hence, the access control modules in ejabberd allow us to distinguish users with their groups, thus providing different services for different users.</li>
+<li><em>Utils and Libraries.</em> Some other libraries and utils exist in ejabberd for common purposes, e.g.: XML processing, SASL authentication, Encodings, Logger, etc. It is worth noting the ejabberd_logger is a very good logger module perfectly usable by any other projects.</li>
+</ul>
+
+
+<h2>The Interface Layer</h2>
+
+<p>This layer handles incoming data from and outgoing data from the client. Its main functionaly is to listen on a local port waiting for client connections, establish a connection any clients or servers when necessary, and exchange data. It supports TCP/TLS connections as well as UDP transport, as is described in our last discussions. It serves as the interface between the outer world and the ejabberd server.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[More on Echo Service: Using TLS and XML Streams]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams/"/>
+    <updated>2012-05-29T15:27:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams</id>
+    <content type="html"><![CDATA[<h2>Using TLS</h2>
+
+<p>OK. We have written a simple echo service, serving both on tcp and udp. Now we want our echo service to be working for TLS, too.</p>
+
+<p>The tls module fits well into implementing TLS based secure connections, for it has the following advantages over the defaut erlang ssl module:</p>
+
+<ol>
+<li>It is implemented using C and has better performance.</li>
+<li>It supports starttls i.e. start tls over the tcp connection depending on situations, without having to re-establish a new connection.</li>
+</ol>
+
+
+<p>To enable tls connections, use tls:tcp_to_tls/2 to transform a tcp socket to a tls one:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>echo_service.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">init</span><span class="p">([{</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">},</span> <span class="nv">Opts</span><span class="p">])</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;start with sockmod: </span><span class="si">~p</span><span class="s"> csock: </span><span class="si">~p</span><span class="s"> opts: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">]),</span>
+</span><span class='line'><span class="nv">State</span> <span class="o">=</span> <span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="nv">SockMod</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="nv">Opts</span><span class="p">},</span>
+</span><span class='line'><span class="nv">NewState</span> <span class="o">=</span> <span class="n">set_opts</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="n">state_name</span><span class="p">,</span> <span class="nv">NewState</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">handle_info</span><span class="p">({</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">},</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="nv">SockMod</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">}</span><span class="o">=</span><span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">case</span> <span class="nv">SockMod</span> <span class="k">of</span>
+</span><span class='line'>    <span class="n">tls</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">case</span> <span class="nn">tls</span><span class="p">:</span><span class="nf">recv_data</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>            <span class="p">{</span> <span class="p">_,</span> <span class="err">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="err">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>                <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">{</span> <span class="p">_,</span> <span class="nv">Data</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>                <span class="nv">SockMod</span><span class="p">:</span><span class="nb">send</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">Data</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">end</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">_</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">SockMod</span><span class="p">:</span><span class="nb">send</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span><span class="p">,</span>
+</span><span class='line'><span class="nf">activate_socket</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'><span class="p">{</span><span class="n">next_state</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">};</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">activate_socket</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">csock</span><span class="o">=</span><span class="p">{</span><span class="n">tlssock</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="p">}</span><span class="o">=</span><span class="nv">TLSSock</span><span class="p">})</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">tls</span><span class="p">:</span><span class="nf">setopts</span><span class="p">(</span><span class="nv">TLSSock</span><span class="p">,</span> <span class="p">[{</span><span class="n">active</span><span class="p">,</span> <span class="n">once</span><span class="p">}]);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">activate_socket</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">})</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">inet</span><span class="p">:</span><span class="nf">setopts</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="p">[{</span><span class="n">active</span><span class="p">,</span> <span class="n">once</span><span class="p">}]).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">set_opts</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="nv">Opts</span><span class="p">}</span> <span class="o">=</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">TLSEnabled</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">member</span><span class="p">(</span><span class="n">tls</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">),</span>
+</span><span class='line'><span class="k">if</span>
+</span><span class='line'>    <span class="nv">TLSEnabled</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">TLSOpts</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">filter</span><span class="p">(</span><span class="k">fun</span><span class="p">({</span><span class="n">certfile</span><span class="p">,</span> <span class="p">_</span> <span class="p">})</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">true</span><span class="p">;</span>
+</span><span class='line'>                                  <span class="p">(</span> <span class="p">_</span> <span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span>
+</span><span class='line'>                               <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>                               <span class="p">[</span><span class="n">verify_none</span> <span class="p">|</span> <span class="nv">Opts</span><span class="p">]),</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">TLSSock</span><span class="p">}</span> <span class="o">=</span> <span class="nn">tls</span><span class="p">:</span><span class="nf">tcp_to_tls</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">TLSOpts</span><span class="p">),</span>
+</span><span class='line'>        <span class="nv">NewState</span> <span class="o">=</span> <span class="nv">State</span><span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="n">tls</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">TLSSock</span><span class="p">},</span>
+</span><span class='line'>        <span class="n">activate_socket</span><span class="p">(</span><span class="nv">NewState</span><span class="p">),</span>
+</span><span class='line'>        <span class="nv">NewState</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">true</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">Opts1</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">filter</span><span class="p">(</span><span class="k">fun</span><span class="p">(</span><span class="n">inet</span><span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span><span class="p">;</span>
+</span><span class='line'>                                <span class="p">(</span><span class="n">tls</span><span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span><span class="p">;</span>
+</span><span class='line'>                                <span class="p">({</span> <span class="n">ip</span><span class="p">,</span> <span class="p">_</span> <span class="p">})</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span><span class="p">;</span>
+</span><span class='line'>                                <span class="p">(</span> <span class="p">_</span> <span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">true</span>
+</span><span class='line'>                             <span class="k">end</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">),</span>
+</span><span class='line'>        <span class="nn">inet</span><span class="p">:</span><span class="nf">setopts</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">Opts1</span><span class="p">),</span>
+</span><span class='line'>        <span class="n">activate_socket</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'>        <span class="nv">State</span>
+</span><span class='line'><span class="k">end</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>in set_opts/1, we use tls:tcp_to_tls/2 to transform the accepted tcp socket in to a tls socket, then we use tls:recv_data/2 to receive all the tls data. tls:tls_recv_data will automatically do the handshakes needed, returning data if presents (handshake data excluded). Finally, we use tls:send/2 to send any data back to the client.</p>
+
+<p><em>Note</em>: complete code listing available from <a href="https://github.com/eshock/ejabberd">https://github.com/eshock/ejabberd</a> on branch <em>echo_service</em>.</p>
+
+<h2>Using xml_stream</h2>
+
+<p>Now let&rsquo;s take our echo service up to the next level: what about receiving xml streams as input , and echoing xml stanzas?</p>
+
+<p>That&rsquo;s also very simple.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>echo_service.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">socket_type</span><span class="p">()</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">xml_stream</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">init</span><span class="p">([{</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">},</span> <span class="nv">Opts</span><span class="p">])</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;start with sockmod: </span><span class="si">~p</span><span class="s"> csock: </span><span class="si">~p</span><span class="s"> opts: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">]),</span>
+</span><span class='line'><span class="nv">State</span> <span class="o">=</span> <span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="nv">SockMod</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="nv">Opts</span><span class="p">},</span>
+</span><span class='line'><span class="nv">NewState</span> <span class="o">=</span> <span class="n">set_opts</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="nv">NewState</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">process</span><span class="p">({</span><span class="n">xmlstreamelement</span><span class="p">,</span><span class="nv">El</span><span class="p">},</span> <span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="nv">SockMod</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">}</span> <span class="o">=</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;element: </span><span class="si">~p</span><span class="s"> </span><span class="si">~p</span><span class="s"> </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">,</span> <span class="nv">El</span><span class="p">]),</span>
+</span><span class='line'><span class="nv">SockMod</span><span class="p">:</span><span class="nb">send</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nn">xml</span><span class="p">:</span><span class="nf">element_to_binary</span><span class="p">(</span><span class="nv">El</span><span class="p">)),</span>
+</span><span class='line'><span class="p">{</span><span class="n">next_state</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="nv">State</span><span class="p">};</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">process</span><span class="p">(</span><span class="nv">Event</span><span class="p">,</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;event </span><span class="si">~p</span><span class="s"> </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">Event</span><span class="p">,</span> <span class="nv">State</span><span class="p">]),</span>
+</span><span class='line'><span class="p">{</span><span class="n">next_state</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">activate_socket</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="n">ejabberd_socket</span><span class="p">})</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">ok</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">activate_socket</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="n">tls</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">TLSSock</span><span class="p">})</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">tls</span><span class="p">:</span><span class="nf">setopts</span><span class="p">(</span><span class="nv">TLSSock</span><span class="p">,</span> <span class="p">[{</span><span class="n">active</span><span class="p">,</span> <span class="n">once</span><span class="p">}]);</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">activate_socket</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="n">gen_tcp</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">})</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">inet</span><span class="p">:</span><span class="nf">setopts</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="p">[{</span><span class="n">active</span><span class="p">,</span> <span class="n">once</span><span class="p">}]).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">set_opts</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="n">ejabberd_socket</span><span class="p">}</span><span class="o">=</span><span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">State</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">set_opts</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="nv">Opts</span><span class="p">}</span> <span class="o">=</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">TLSEnabled</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">member</span><span class="p">(</span><span class="n">tls</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">),</span>
+</span><span class='line'><span class="k">if</span>
+</span><span class='line'>    <span class="nv">TLSEnabled</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">TLSOpts</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">filter</span><span class="p">(</span><span class="k">fun</span><span class="p">({</span><span class="n">certfile</span><span class="p">,</span> <span class="p">_</span> <span class="p">})</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">true</span><span class="p">;</span>
+</span><span class='line'>                                  <span class="p">(_)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span>
+</span><span class='line'>                               <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>                               <span class="p">[</span><span class="n">verify_none</span> <span class="p">|</span> <span class="nv">Opts</span><span class="p">]),</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">TLSSock</span><span class="p">}</span> <span class="o">=</span> <span class="nn">tls</span><span class="p">:</span><span class="nf">tcp_to_tls</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">TLSOpts</span><span class="p">),</span>
+</span><span class='line'>        <span class="nv">NewState</span> <span class="o">=</span> <span class="nv">State</span><span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="n">tls</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">TLSSock</span><span class="p">},</span>
+</span><span class='line'>        <span class="n">activate_socket</span><span class="p">(</span><span class="nv">NewState</span><span class="p">),</span>
+</span><span class='line'>        <span class="nv">NewState</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">true</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">Opts1</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">filter</span><span class="p">(</span><span class="k">fun</span><span class="p">(</span><span class="n">inet</span><span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span><span class="p">;</span>
+</span><span class='line'>                                <span class="p">(</span><span class="n">tls</span><span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span><span class="p">;</span>
+</span><span class='line'>                                <span class="p">({</span><span class="n">ip</span><span class="p">,</span> <span class="p">_</span> <span class="p">})</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span><span class="p">;</span>
+</span><span class='line'>                                <span class="p">(</span> <span class="p">_</span> <span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">true</span>
+</span><span class='line'>                             <span class="k">end</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">),</span>
+</span><span class='line'>        <span class="nn">inet</span><span class="p">:</span><span class="nf">setopts</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">Opts1</span><span class="p">),</span>
+</span><span class='line'>        <span class="n">activate_socket</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'>        <span class="nv">State</span>
+</span><span class='line'><span class="k">end</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We first change the socket_type() to return xml_stream, which tells ejabberd to use ejabberd_receiver as our receiver. Then we override the fsm state call back process/2 to process any incoming xml stanzas. Note that we do no-op for activate_socket and set_opts, for any incoming data are automatically taken care of by the ejabberd_receiver module.</p>
+
+<p>To test it, let&rsquo;s run nc to connect to the 5555 port:</p>
+
+<pre><code>nc localhost 5555
+&lt;?xml version='1.0'?&gt;&lt;stream:stream to="localhost" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" version="1.0"&gt;
+&lt;body&gt;hello&lt;/body&gt;
+</code></pre>
+
+<p>If everything goes well, the server answers with reply:</p>
+
+<pre><code>&lt;body&gt;hello&lt;/body&gt;
+</code></pre>
+
+<p><em>Note</em>: complete code listing available at: <a href="https://github.com/eshock/ejabberd">https://github.com/eshock/ejabberd</a> on branch <em>xml_stream_echo_service</em>.</p>
+
+<h2>To sum up</h2>
+
+<p>We have modified our echo service module to accept tls connections as well as xml_stream stanzas. Next time we&rsquo;ll be talking about something else, but also fun!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Writing a Simple Echo Service Module]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/05/25/writing-a-simple-echo-service-module/"/>
+    <updated>2012-05-25T09:08:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/05/25/writing-a-simple-echo-service-module</id>
+    <content type="html"><![CDATA[<p>In this blog, I will continue my discussion on ejabberd&rsquo;s socket infrastructure.
+For the sake of simplicity, let&rsquo;s write a simple echo service module, which receives any packet from the client, and echo the packet back.</p>
+
+<h2>Register our listener</h2>
+
+<p>First, we must register our service in the ejabberd&rsquo;s config file:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd.cfg </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">{</span><span class="n">listen</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">[</span>
+</span><span class='line'>   <span class="c">%% &amp;hellip;</span>
+</span><span class='line'>   <span class="p">{</span><span class="mi">5555</span><span class="p">,</span> <span class="n">echo_service</span><span class="p">,</span> <span class="p">[]},</span>
+</span><span class='line'>   <span class="c">%% …</span>
+</span><span class='line'>  <span class="p">]}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Quick and dirty echo service</h2>
+
+<p>Our echo service will be listening at 5555/tcp. Now let&rsquo;s write a handler for this port,  we start out with a gen_fsm skeleton:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>echo_service.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="c">%%%&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;</span>
+</span><span class='line'><span class="c">%%% @author Chi Zhang &lt;a href=&quot;&amp;#x6d;&amp;#97;&amp;#x69;&amp;#108;&amp;#116;&amp;#111;&amp;#58;&amp;#x65;&amp;#108;&amp;#101;&amp;#99;&amp;#112;&amp;#x61;&amp;#111;&amp;#97;&amp;#111;&amp;#64;&amp;#103;&amp;#x6d;&amp;#97;&amp;#105;&amp;#x6c;&amp;#46;&amp;#99;&amp;#111;&amp;#x6d;&quot;&gt;&amp;#101;&amp;#x6c;&amp;#101;&amp;#99;&amp;#x70;&amp;#x61;&amp;#111;&amp;#x61;&amp;#x6f;&amp;#64;&amp;#x67;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#108;&amp;#x2e;&amp;#x63;&amp;#x6f;&amp;#x6d;&lt;/a&gt;</span>
+</span><span class='line'><span class="c">%%% @copyright &amp;copy; 2012, Chi Zhang</span>
+</span><span class='line'><span class="c">%%% @doc</span>
+</span><span class='line'><span class="c">%%%  echo service demo</span>
+</span><span class='line'><span class="c">%%% @end</span>
+</span><span class='line'><span class="c">%%% Created : 24 May 2012 by Chi Zhang &lt;a href=&quot;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#x6c;&amp;#x74;&amp;#x6f;&amp;#x3a;&amp;#101;&amp;#x6c;&amp;#x65;&amp;#99;&amp;#x70;&amp;#97;&amp;#x6f;&amp;#x61;&amp;#111;&amp;#64;&amp;#x67;&amp;#109;&amp;#x61;&amp;#105;&amp;#108;&amp;#46;&amp;#99;&amp;#x6f;&amp;#x6d;&quot;&gt;&amp;#101;&amp;#x6c;&amp;#101;&amp;#x63;&amp;#112;&amp;#x61;&amp;#x6f;&amp;#97;&amp;#x6f;&amp;#64;&amp;#x67;&amp;#109;&amp;#97;&amp;#x69;&amp;#108;&amp;#46;&amp;#99;&amp;#111;&amp;#x6d;&lt;/a&gt;</span>
+</span><span class='line'><span class="c">%%%&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;</span>
+</span><span class='line'><span class="p">-</span><span class="ni">module</span><span class="p">(</span><span class="n">echo_service</span><span class="p">).</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;-</span><span class="n">behaviour</span><span class="p">(</span><span class="n">gen_fsm</span><span class="p">).</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c">%% API</span>
+</span><span class='line'><span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">start_link</span><span class="o">/</span><span class="mi">2</span><span class="p">]).</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;-</span><span class="n">export</span><span class="p">([</span><span class="n">start</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span>     <span class="n">socket_type</span><span class="o">/</span><span class="mi">0</span><span class="p">]).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c">%% gen_fsm callbacks</span>
+</span><span class='line'><span class="p">-</span><span class="ni">export</span><span class="p">([</span><span class="n">init</span><span class="o">/</span><span class="mi">1</span><span class="p">,</span> <span class="n">state_name</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">state_name</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="n">handle_event</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span> <span class="n">handle_sync_event</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span> <span class="n">handle_info</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="n">terminate</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span> <span class="n">code_change</span><span class="o">/</span><span class="mi">4</span><span class="p">]).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;-</span><span class="n">define</span><span class="p">(</span><span class="nv">SERVER</span><span class="p">,</span> <span class="o">?</span><span class="nv">MODULE</span><span class="p">).</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;-</span><span class="n">include</span><span class="p">(</span><span class="err">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">ejabberd</span><span class="p">.</span><span class="n">hrl</span><span class="err">&amp;</span><span class="n">rdquo</span><span class="p">;).</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;-</span><span class="n">record</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="p">{</span><span class="n">sockmod</span><span class="p">,</span> <span class="n">csock</span><span class="p">,</span> <span class="n">opts</span><span class="p">}).</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c">%%%===================================================================</span>
+</span><span class='line'><span class="c">%%% API</span>
+</span><span class='line'><span class="c">%%%===================================================================&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">start</span><span class="p">(</span><span class="nv">SockData</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">start_link</span><span class="p">(</span><span class="nv">SockData</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">socket_type</span><span class="p">()</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">raw</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">start_link</span><span class="p">(</span><span class="nv">SockData</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">gen_fsm</span><span class="p">:</span><span class="nf">start_link</span><span class="p">(</span><span class="o">?</span><span class="nv">MODULE</span><span class="p">,</span> <span class="p">[</span><span class="nv">SockData</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">],</span> <span class="p">[]).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c">%%%===================================================================</span>
+</span><span class='line'><span class="c">%%% gen_fsm</span>
+</span><span class='line'><span class="c">%%%===================================================================&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">init</span><span class="p">([{</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">},</span> <span class="nv">Opts</span><span class="p">])</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;start with sockmod: </span><span class="si">~p</span><span class="s"> csock: </span><span class="si">~p</span><span class="s"> opts: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">]),</span>
+</span><span class='line'><span class="nv">State</span> <span class="o">=</span> <span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="nv">SockMod</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="nv">Opts</span><span class="p">},</span>
+</span><span class='line'><span class="nf">activate_socket</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="n">state_name</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">state_name</span><span class="p">(_</span><span class="nv">Event</span><span class="p">,</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">{</span><span class="n">next_state</span><span class="p">,</span> <span class="n">state_name</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">state_name</span><span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">Event</span><span class="p">,</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">From</span><span class="p">,</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">Reply</span> <span class="o">=</span> <span class="n">ok</span><span class="p">,</span>
+</span><span class='line'><span class="p">{</span><span class="n">reply</span><span class="p">,</span> <span class="nv">Reply</span><span class="p">,</span> <span class="n">state_name</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">handle_event</span><span class="p">(_</span><span class="nv">Event</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">{</span><span class="n">next_state</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">handle_sync_event</span><span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">Event</span><span class="p">,</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">From</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">Reply</span> <span class="o">=</span> <span class="n">ok</span><span class="p">,</span>
+</span><span class='line'><span class="p">{</span><span class="n">reply</span><span class="p">,</span> <span class="nv">Reply</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">handle_info</span><span class="p">({_,</span> <span class="nv">CSock</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">},</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="nv">SockMod</span><span class="p">}</span><span class="o">=</span><span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;received: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">Packet</span><span class="p">]),</span>
+</span><span class='line'><span class="nv">SockMod</span><span class="p">:</span><span class="nb">send</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">),</span>
+</span><span class='line'><span class="nf">activate_socket</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'><span class="p">{</span><span class="n">next_state</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">};</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">handle_info</span><span class="p">({</span><span class="n">tcp_closed</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">CSock</span><span class="p">},</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;client closed: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">State</span><span class="p">]),</span>
+</span><span class='line'><span class="p">{</span><span class="n">stop</span><span class="p">,</span> <span class="n">normal</span><span class="p">,</span> <span class="nv">State</span><span class="p">};</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">handle_info</span><span class="p">(_</span><span class="nv">Info</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;received: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[_</span><span class="nv">Info</span><span class="p">]),</span>
+</span><span class='line'><span class="p">{</span><span class="n">next_state</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">terminate</span><span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">Reason</span><span class="p">,</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">StateName</span><span class="p">,</span> <span class="p">_</span><span class="nv">State</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;terminated </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[_</span><span class="nv">Reason</span><span class="p">]),</span>
+</span><span class='line'><span class="n">ok</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">code_change</span><span class="p">(</span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">OldVsn</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">,</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="nv">Extra</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">StateName</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="c">%%%===================================================================</span>
+</span><span class='line'><span class="c">%%% Internal functions</span>
+</span><span class='line'><span class="c">%%%===================================================================&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">activate_socket</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">})</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">inet</span><span class="p">:</span><span class="nf">setopts</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="p">[{</span><span class="n">active</span><span class="p">,</span> <span class="n">once</span><span class="p">}]).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Pretty simple, right? With only very few lines of the default gen_fsm code changed,  we have a fully working echo service!</p>
+
+<p>The first thing you may have noticed is the start/2 and socket_type/0 call. Why is this neccessary? Recall from ejabberd_socket:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd_socket.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">start</span><span class="p">(</span><span class="nv">Module</span><span class="p">,</span> <span class="nv">SockMod</span><span class="p">,</span> <span class="nv">Socket</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">case</span> <span class="nv">Module</span><span class="p">:</span><span class="nf">socket_type</span><span class="p">()</span> <span class="k">of</span>
+</span><span class='line'><span class="n">xml_stream</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="nv">MaxStanzaSize</span> <span class="o">=</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">keysearch</span><span class="p">(</span><span class="n">max_stanza_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">value</span><span class="p">,</span> <span class="p">{_,</span> <span class="nv">Size</span><span class="p">}}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="nv">Size</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">_</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">infinity</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">{</span><span class="nv">ReceiverMod</span><span class="p">,</span> <span class="nv">Receiver</span><span class="p">,</span> <span class="nv">RecRef</span><span class="p">}</span> <span class="o">=</span>
+</span><span class='line'>    <span class="k">case</span> <span class="k">catch</span> <span class="nv">SockMod</span><span class="p">:</span><span class="nf">custom_receiver</span><span class="p">(</span><span class="nv">Socket</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">receiver</span><span class="p">,</span> <span class="nv">RecMod</span><span class="p">,</span> <span class="nv">RecPid</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">{</span><span class="nv">RecMod</span><span class="p">,</span> <span class="nv">RecPid</span><span class="p">,</span> <span class="nv">RecMod</span><span class="p">};</span>
+</span><span class='line'>        <span class="p">_</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">RecPid</span> <span class="o">=</span> <span class="nn">ejabberd_receiver</span><span class="p">:</span><span class="nf">start</span><span class="p">(</span>
+</span><span class='line'>               <span class="nv">Socket</span><span class="p">,</span> <span class="nv">SockMod</span><span class="p">,</span> <span class="n">none</span><span class="p">,</span> <span class="nv">MaxStanzaSize</span><span class="p">),</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">ejabberd_receiver</span><span class="p">,</span> <span class="nv">RecPid</span><span class="p">,</span> <span class="nv">RecPid</span><span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>    <span class="nv">SocketData</span> <span class="o">=</span> <span class="nl">#socket_state</span><span class="p">{</span><span class="n">sockmod</span> <span class="o">=</span> <span class="nv">SockMod</span><span class="p">,</span>
+</span><span class='line'>                   <span class="n">socket</span> <span class="o">=</span> <span class="nv">Socket</span><span class="p">,</span>
+</span><span class='line'>                   <span class="n">receiver</span> <span class="o">=</span> <span class="nv">RecRef</span><span class="p">},</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nv">Module</span><span class="p">:</span><span class="nf">start</span><span class="p">({</span><span class="o">?</span><span class="nv">MODULE</span><span class="p">,</span> <span class="nv">SocketData</span><span class="p">},</span> <span class="nv">Opts</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Pid</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">case</span> <span class="nv">SockMod</span><span class="p">:</span><span class="nf">controlling_process</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Receiver</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">ok</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="p">_</span><span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>            <span class="nv">SockMod</span><span class="p">:</span><span class="nf">close</span><span class="p">(</span><span class="nv">Socket</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>        <span class="nv">ReceiverMod</span><span class="p">:</span><span class="nf">become_controller</span><span class="p">(</span><span class="nv">Receiver</span><span class="p">,</span> <span class="nv">Pid</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="p">_</span><span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">SockMod</span><span class="p">:</span><span class="nf">close</span><span class="p">(</span><span class="nv">Socket</span><span class="p">),</span>
+</span><span class='line'>        <span class="k">case</span> <span class="nv">ReceiverMod</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">ejabberd_receiver</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>            <span class="nv">ReceiverMod</span><span class="p">:</span><span class="nf">close</span><span class="p">(</span><span class="nv">Receiver</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">_</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">ok</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">;</span>
+</span><span class='line'><span class="n">independent</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'><span class="n">raw</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nv">Module</span><span class="p">:</span><span class="nf">start</span><span class="p">({</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">Socket</span><span class="p">},</span> <span class="nv">Opts</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Pid</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">case</span> <span class="nv">SockMod</span><span class="p">:</span><span class="nf">controlling_process</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Pid</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="n">ok</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">ok</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="p">_</span><span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>            <span class="nv">SockMod</span><span class="p">:</span><span class="nf">close</span><span class="p">(</span><span class="nv">Socket</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">end</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="p">_</span><span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">SockMod</span><span class="p">:</span><span class="nf">close</span><span class="p">(</span><span class="nv">Socket</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'><span class="k">end</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>As is shown above, if the Module:socket_type() returns the atom &lsquo;raw&rsquo;, then the module will be used without ejabberd_receiver, which is kinda what we want, because we want to take control over everything. After ejabberd_socket calls Module:start/2, passing the socket module(gen_tcp here) and the socket, it will call SockMod:controlling_process to direct any messages with the socket to the Pid returned by Module:start/2, which is, in our case, the echo_service gen_fsm process.</p>
+
+<p>When the echo_service fsm starts, the socket is in passive mode, that is, it won&rsquo;t get any data until the recv() function is called. As a result, we set the socket to be active once, and the data can be received. Everytime we receive a new packet, we generate and send response, and then set the socket to be active once again.</p>
+
+<p>Finally, don&rsquo;t forget to turn off the FSM when {tcp_closed, Sock} is received. That prevents you from leaking processes.</p>
+
+<p>That should sound reasonable enough. But wait, what if we want our echo service to be working on UDP also?</p>
+
+<h2>Adding UDP Transport</h2>
+
+<p>Simple. Let&rsquo;s see how UDP sockets in ejabberd are handled:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd_listener.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">init_udp</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">case</span> <span class="nn">gen_udp</span><span class="p">:</span><span class="nf">open</span><span class="p">(</span><span class="nv">Port</span><span class="p">,</span> <span class="p">[</span><span class="n">binary</span><span class="p">,</span>
+</span><span class='line'>             <span class="p">{</span><span class="n">active</span><span class="p">,</span> <span class="n">false</span><span class="p">},</span>
+</span><span class='line'>             <span class="p">{</span><span class="n">reuseaddr</span><span class="p">,</span> <span class="n">true</span><span class="p">}</span> <span class="p">|</span>
+</span><span class='line'>             <span class="nv">SockOpts</span><span class="p">])</span> <span class="k">of</span>
+</span><span class='line'><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Socket</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="c">%% Inform my parent that this port was opened succesfully</span>
+</span><span class='line'>    <span class="nn">proc_lib</span><span class="p">:</span><span class="nf">init_ack</span><span class="p">({</span><span class="n">ok</span><span class="p">,</span> <span class="n">self</span><span class="p">()}),</span>
+</span><span class='line'>    <span class="n">udp_recv</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">);</span>
+</span><span class='line'><span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">socket_error</span><span class="p">(</span><span class="nv">Reason</span><span class="p">,</span> <span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">udp_recv</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">case</span> <span class="nn">gen_udp</span><span class="p">:</span><span class="nf">recv</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="p">{</span><span class="nv">Addr</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">}}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="k">catch</span> <span class="nv">Module</span><span class="p">:</span><span class="nf">udp_recv</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Addr</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">&#39;EXIT&#39;</span><span class="p">,</span> <span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="o">?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;failed to process UDP packet:</span><span class="si">~n</span><span class="s">&quot;</span>
+</span><span class='line'>               <span class="s">&quot;** Source: {</span><span class="si">~p</span><span class="s">, </span><span class="si">~p</span><span class="s">}</span><span class="si">~n</span><span class="s">&quot;</span>
+</span><span class='line'>               <span class="s">&quot;** Reason: </span><span class="si">~p~n</span><span class="s">** Packet: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="p">[</span><span class="nv">Addr</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">Reason</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">_</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ok</span>
+</span><span class='line'>    <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">udp_recv</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">);</span>
+</span><span class='line'><span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="o">?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;unexpected UDP error: </span><span class="si">~s</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">format_error</span><span class="p">(</span><span class="nv">Reason</span><span class="p">)]),</span>
+</span><span class='line'>    <span class="n">throw</span><span class="p">({</span><span class="n">error</span><span class="p">,</span> <span class="nv">Reason</span><span class="p">})</span>
+</span><span class='line'><span class="k">end</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>That&rsquo;s pretty neat. Instead of spawning a new process for every new connection like the tcp, udp sockets are handled by only one process for each port.</p>
+
+<p>To use UDP transport, we simply add udp_recv to our Module:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>echo_service.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">udp_recv</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Addr</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;udp receive: socket </span><span class="si">~p</span><span class="s"> addr </span><span class="si">~p</span><span class="s"> port </span><span class="si">~p</span><span class="s"> packet </span><span class="si">~p</span><span class="s"> opts </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Addr</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">]),</span>
+</span><span class='line'><span class="nn">gen_udp</span><span class="p">:</span><span class="nb">send</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Addr</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">Packet</span><span class="p">).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>That&rsquo;s enough for most purposes, but you must be careful: if the Module:udp_recv/5 call blocks, it blocks any other data to be handled. Hence, in real life applications, get ready to spawn multiple processes to handle the UDP requests!</p>
+
+<h2>Using customized socket options</h2>
+
+<p>The ejabberd_listener&rsquo;s listen options fits our needs in most cases. What if we want customized socket options, other than what the default options, say, we want {packet, 4} to be set before we receive any data from the socket?</p>
+
+<p>That&rsquo;s easy. First add the options in the config file:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd.cfg </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="p">{</span><span class="n">listen</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">[</span>
+</span><span class='line'>   <span class="c">%% &amp;hellip;</span>
+</span><span class='line'>   <span class="p">{</span><span class="mi">5556</span><span class="p">,</span> <span class="n">echo_service</span><span class="p">,</span> <span class="p">[{</span><span class="n">packet</span><span class="p">,</span> <span class="mi">4</span><span class="p">}]},</span>
+</span><span class='line'>   <span class="c">%% …</span>
+</span><span class='line'>  <span class="p">]}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Then we add a setopts step in our echo service module:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>echo_service.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">init</span><span class="p">([{</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">},</span> <span class="nv">Opts</span><span class="p">])</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;?</span><span class="nv">ERROR_MSG</span><span class="p">(</span><span class="s">&quot;start with sockmod: </span><span class="si">~p</span><span class="s"> csock: </span><span class="si">~p</span><span class="s"> opts: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nv">SockMod</span><span class="p">,</span> <span class="nv">CSock</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">]),</span>
+</span><span class='line'><span class="nv">State</span> <span class="o">=</span> <span class="nl">#state</span><span class="p">{</span><span class="n">sockmod</span><span class="o">=</span><span class="nv">SockMod</span><span class="p">,</span> <span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="nv">Opts</span><span class="p">},</span>
+</span><span class='line'><span class="nf">set_opts</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'><span class="nf">activate_socket</span><span class="p">(</span><span class="nv">State</span><span class="p">),</span>
+</span><span class='line'><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="n">state_name</span><span class="p">,</span> <span class="nv">State</span><span class="p">}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">set_opts</span><span class="p">(</span><span class="nl">#state</span><span class="p">{</span><span class="n">csock</span><span class="o">=</span><span class="nv">CSock</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="nv">Opts</span><span class="p">})</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">Opts1</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">filter</span><span class="p">(</span><span class="k">fun</span><span class="p">(</span><span class="n">inet</span><span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">({</span><span class="n">packet</span><span class="p">,</span> <span class="p">_})</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">true</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">(</span> <span class="p">_</span> <span class="p">)</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">false</span>
+</span><span class='line'>         <span class="k">end</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">),</span>
+</span><span class='line'><span class="nn">inet</span><span class="p">:</span><span class="nf">setopts</span><span class="p">(</span><span class="nv">CSock</span><span class="p">,</span> <span class="nv">Opts1</span><span class="p">).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We have added a filter to filter the options provided, allowing only valid options to be set. Now the echo service listening on 5556/tcp will require a 4-octet header stating the whole packet length, cool isn&rsquo;t it?</p>
+
+<h2>To sum up</h2>
+
+<p>We have written a very simple echo service to learn how to use the ejabberd&rsquo;s socket infrastructure. To write a simple TCP service, we only need to implement the socket_type() to return raw, and spawn a process handling the socket in Mod:start/2. To write a simple UDP service, we only need to provide a udp_recv/5 callback. Things we haven&rsquo;t covered yet:</p>
+
+<ol>
+<li>What about the TLS transport ? (hint:use the tls module included in ejabberd.)</li>
+<li>How to separte socket receiving data and socket handling logic? (hint: start and return your own receiver in your Mod:start).</li>
+<li>How to use the builtin ejabberd_receiver and ejabberd_socket? (hint: return xml_stream for socket_type/0).</li>
+</ol>
+
+
+<p>The above questions are left out as an exercise. Hack on!</p>
+
+<p><em>Note</em>: All the code in this blog can be accessed at: <a href="https://github.com/eshock/ejabberd">https://github.com/eshock/ejabberd</a> on branch echo_service.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[The Ejabberd Socket Infrastructure]]></title>
+    <link href="http://eshock.github.io/ejabberd/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure/"/>
+    <updated>2012-05-23T13:49:00+08:00</updated>
+    <id>http://eshock.github.io/ejabberd/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure</id>
+    <content type="html"><![CDATA[<p>Welcome to my first blog about ejabberd source code hacking. In these series of blogs, I want to take notes about how the <a href="http://www.ejabberd.im/">ejabberd</a> works, and how to hack it to get customized features.</p>
+
+<p>The source code version in discussion is ejabberd 2.1.10 release, which is the latest stable version at this time.</p>
+
+<h2>Intro</h2>
+
+<p>The first step to source hacking is code reading. Ejabberd is a big project (with 80k+lines of erlang code), so it&rsquo;s impossible for us to understand it all at once. Like reading a book, we need to get the key idea first.</p>
+
+<p>What is the key idea of this XMPP(Jabber) server, then? Let&rsquo;s review some of the key usages of a typical XMPP session:</p>
+
+<ol>
+<li>Alice started an XMPP client on her computer, which establishes a TCP connection to xmpp.example.org:5222.</li>
+<li>The server authenticates the client by exchanging XML stanzas.</li>
+<li>Alice uses the XMPP client to exchange messages/presences/iqs with the server, completing tasks such as instant messaging and presence notifying.</li>
+</ol>
+
+
+<p>The essential task of the server, then, is to listen on a specific port, wait for clients or other servers to connect to it, and then exchange information using specific data formats(in the XMPP&rsquo;s situation, XML stanzas).</p>
+
+<p>That said, let&rsquo;s examine the listener/socket code of ejabberd first, throwing aside other features along the way.</p>
+
+<p><em>Notice</em>: for the sake of clearity, I intentionally omitted a lot of code which are either unrelated to the topic discussed or only used for error handling.</p>
+
+<h2>Binding listener ports</h2>
+
+<p>In ejabberd, the whole server is packaged into a single OTP application.</p>
+
+<p>The modules related to ejabberd&rsquo;s socket infrastructure are: ejabberd_listener, ejabberd_socket and ejabberd_receiver.</p>
+
+<p>The ejabberd_listener listens on every port specified in the ejabberd configuration file, spawns a process for each port and then accepts the sockets. When it finishes, it starts ejabberd_socket which in turn starts two processes: ejabberd_receiver and logic module according to the config (ejabberd_c2s for 5222, for example). The ejabberd_receiver is responsible for receiving any incoming packets and then forwarding them to the logic module. The logic module parses and handles the packets, and sends responses and requests using the ejabberd_socket utils.</p>
+
+<p>Let&rsquo;s start with the application module:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd_app.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">start</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span> <span class="p">_</span><span class="nv">Args</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">Sup</span> <span class="o">=</span> <span class="nn">ejabberd_sup</span><span class="p">:</span><span class="nf">start_link</span><span class="p">(),</span>
+</span><span class='line'><span class="nn">ejabberd_listener</span><span class="p">:</span><span class="nf">start_listeners</span><span class="p">().</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>In ejabberd_sup:start_link/0, ejabberd_listener:start_link/0 is invoked:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd_sup.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">init</span><span class="p">([])</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">Listener</span> <span class="o">=</span>
+</span><span class='line'><span class="p">{</span><span class="n">ejabberd_listener</span><span class="p">,</span>
+</span><span class='line'> <span class="p">{</span><span class="n">ejabberd_listener</span><span class="p">,</span> <span class="n">start_link</span><span class="p">,</span> <span class="p">[]},</span>
+</span><span class='line'> <span class="n">permanent</span><span class="p">,</span>
+</span><span class='line'> <span class="n">infinity</span><span class="p">,</span>
+</span><span class='line'> <span class="n">supervisor</span><span class="p">,</span>
+</span><span class='line'> <span class="p">[</span><span class="n">ejabberd_listener</span><span class="p">]}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Inside ejabberd_listener:init/0, the tcp and udp ports are bound according to the config file:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd_listener.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">init</span><span class="p">(_)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">ets</span><span class="p">:</span><span class="nf">new</span><span class="p">(</span><span class="n">listen_sockets</span><span class="p">,</span> <span class="p">[</span><span class="n">named_table</span><span class="p">,</span> <span class="n">public</span><span class="p">]),</span>
+</span><span class='line'><span class="nf">bind_tcp_ports</span><span class="p">(),</span>
+</span><span class='line'><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="p">{</span> <span class="p">{</span><span class="n">one_for_one</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="p">[]}}.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">bind_tcp_ports</span><span class="p">()</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">case</span> <span class="nn">ejabberd_config</span><span class="p">:</span><span class="nf">get_local_option</span><span class="p">(</span><span class="n">listen</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>    <span class="nv">Ls</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nn">lists</span><span class="p">:</span><span class="nf">foreach</span><span class="p">(</span>
+</span><span class='line'>          <span class="k">fun</span><span class="p">({</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">})</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>              <span class="n">bind_tcp_port</span><span class="p">(</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">end</span><span class="p">,</span>
+</span><span class='line'>          <span class="nv">Ls</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">bind_tcp_port</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">RawOpts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c">%% portip has the following format: {5222, {0,0,0,0},tcp}</span>
+</span><span class='line'><span class="p">{</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">IPT</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">,</span> <span class="nv">IPV</span><span class="p">,</span> <span class="nv">Proto</span><span class="p">,</span> <span class="nv">OptsClean</span><span class="p">}</span> <span class="o">=</span> <span class="n">parse_listener_portip</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">RawOpts</span><span class="p">),</span>
+</span><span class='line'><span class="p">_</span><span class="nv">Opts</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">}</span> <span class="o">=</span> <span class="n">prepare_opts</span><span class="p">(</span><span class="nv">IPT</span><span class="p">,</span> <span class="nv">IPV</span><span class="p">,</span> <span class="nv">OptsClean</span><span class="p">),</span>
+</span><span class='line'><span class="c">%% save parsed listener options into ets table</span>
+</span><span class='line'><span class="nf">listen_tcp</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">listen_tcp</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">gen_tcp</span><span class="p">:</span><span class="nf">listen</span><span class="p">(</span><span class="nv">Port</span><span class="p">,</span> <span class="p">[</span><span class="n">binary</span><span class="p">,</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">packet</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">active</span><span class="p">,</span> <span class="n">false</span><span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">reuseaddr</span><span class="p">,</span> <span class="n">true</span><span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">nodelay</span><span class="p">,</span> <span class="n">true</span><span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">send_timeout</span><span class="p">,</span> <span class="o">?</span><span class="nv">TCP_SEND_TIMEOUT</span><span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span><span class="n">keepalive</span><span class="p">,</span> <span class="n">true</span><span class="p">}</span> <span class="p">|</span>
+</span><span class='line'>            <span class="nv">SockOpts</span><span class="p">]).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After ejabberd_listener:init/0 is finished, all the ports specified in the config file are opened(in the listening state), but not accepting any incoming connections yet.</p>
+
+<h2>Accept incoming connections</h2>
+
+<p>Next, the sockets start accepting incoming connections in ejabberd_listener:start_listeners/0:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd_listener.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">start_listeners</span><span class="p">()</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c">%% load listeners config from ets table</span>
+</span><span class='line'><span class="nv">Ls2</span> <span class="o">=</span> <span class="nn">lists</span><span class="p">:</span><span class="nf">map</span><span class="p">(</span>
+</span><span class='line'>    <span class="k">fun</span><span class="p">({</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">})</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">start_listener</span><span class="p">(</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'><span class="k">end</span><span class="p">,</span> <span class="nv">Listeners</span><span class="p">).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">start_listener</span><span class="p">(</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">ChildSpec</span> <span class="o">=</span> <span class="p">{</span><span class="nv">Port</span><span class="p">,</span>
+</span><span class='line'>     <span class="p">{</span><span class="o">?</span><span class="nv">MODULE</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="p">[</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">]},</span>
+</span><span class='line'>     <span class="n">transient</span><span class="p">,</span>
+</span><span class='line'>     <span class="n">brutal_kill</span><span class="p">,</span>
+</span><span class='line'>     <span class="n">worker</span><span class="p">,</span>
+</span><span class='line'>     <span class="p">[</span><span class="o">?</span><span class="nv">MODULE</span><span class="p">]},</span>
+</span><span class='line'><span class="nn">supervisor</span><span class="p">:</span><span class="nf">start_child</span><span class="p">(</span><span class="n">ejabberd_listeners</span><span class="p">,</span> <span class="nv">ChildSpec</span><span class="p">).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">start</span><span class="p">(</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nn">proc_lib</span><span class="p">:</span><span class="nf">start_link</span><span class="p">(</span><span class="o">?</span><span class="nv">MODULE</span><span class="p">,</span> <span class="n">init</span><span class="p">,</span> <span class="p">[</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">]).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">init</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">RawOpts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="p">{</span><span class="nv">Port</span><span class="p">,</span> <span class="nv">IPT</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">,</span> <span class="nv">IPV</span><span class="p">,</span> <span class="nv">Proto</span><span class="p">,</span> <span class="nv">OptsClean</span><span class="p">}</span> <span class="o">=</span> <span class="n">parse_listener_portip</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">RawOpts</span><span class="p">),</span>
+</span><span class='line'><span class="p">{</span><span class="nv">Opts</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">}</span> <span class="o">=</span> <span class="n">prepare_opts</span><span class="p">(</span><span class="nv">IPT</span><span class="p">,</span> <span class="nv">IPV</span><span class="p">,</span> <span class="nv">OptsClean</span><span class="p">),</span>
+</span><span class='line'><span class="nf">init_tcp</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">init_tcp</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">ListenSocket</span> <span class="o">=</span> <span class="n">listen_tcp</span><span class="p">(</span><span class="nv">PortIP</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">SockOpts</span><span class="p">,</span> <span class="nv">Port</span><span class="p">,</span> <span class="nv">IPS</span><span class="p">),</span>
+</span><span class='line'><span class="nn">proc_lib</span><span class="p">:</span><span class="nf">init_ack</span><span class="p">({</span><span class="n">ok</span><span class="p">,</span> <span class="n">self</span><span class="p">()}),</span>
+</span><span class='line'><span class="nf">accept</span><span class="p">(</span><span class="nv">ListenSocket</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">).</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">accept</span><span class="p">(</span><span class="nv">ListenSocket</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">case</span> <span class="nn">gen_tcp</span><span class="p">:</span><span class="nf">accept</span><span class="p">(</span><span class="nv">ListenSocket</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'><span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Socket</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="nn">ejabberd_socket</span><span class="p">:</span><span class="nf">start</span><span class="p">(</span><span class="nv">Module</span><span class="p">,</span> <span class="n">gen_tcp</span><span class="p">,</span> <span class="nv">Socket</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">),</span>
+</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="nv">ListenSocket</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">);</span>
+</span><span class='line'><span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="nv">ListenSocket</span><span class="p">,</span> <span class="nv">Module</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span><span class="p">.</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>As we see the code above, the start_listeners/0 call spawns a new process for each listened ports, and then link it to the ejabberd_listeners supervisor, which is started in ejabberd_listener:start_link/0. This may seem odd to you at first, as it DOES for me, since normally a supervisor&rsquo;s callbacks and its workers' callbacks ought to be put in separate modules. Don&rsquo;t write code like that; it causes confusions.</p>
+
+<p>If you are careful enough, you might notice that the sockets are listened twice(once in bind_tcp_ports/0, once in start_listeners/0). I am not sure why it is implemented that way; it works perfectly if I removed one of them.</p>
+
+<h2>Start handling requests</h2>
+
+<p>Anyway, let&rsquo;s continue to see what happens when a socket is accepted:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>ejabberd_socket.erl </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='erlang'><span class='line'><span class="nf">start</span><span class="p">(</span><span class="nv">Module</span><span class="p">,</span> <span class="nv">SockMod</span><span class="p">,</span> <span class="nv">Socket</span><span class="p">,</span> <span class="nv">Opts</span><span class="p">)</span> <span class="err">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="o">&gt;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="nv">ReceiverMod</span> <span class="o">=</span> <span class="n">ejabberd_receiver</span><span class="p">,</span>  <span class="c">%% see explanation</span>
+</span><span class='line'><span class="nv">RecPid</span> <span class="o">=</span> <span class="nv">ReceiverMod</span><span class="p">:</span><span class="nf">start</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">SockMod</span><span class="p">,</span> <span class="n">none</span><span class="p">,</span> <span class="nv">MaxStanzaSize</span><span class="p">),</span>
+</span><span class='line'><span class="nv">SocketData</span> <span class="o">=</span> <span class="nl">#socket_state</span><span class="p">{</span><span class="n">sockmod</span> <span class="o">=</span> <span class="nv">SockMod</span><span class="p">,</span>
+</span><span class='line'>               <span class="n">socket</span> <span class="o">=</span> <span class="nv">Socket</span><span class="p">,</span>
+</span><span class='line'>               <span class="n">receiver</span> <span class="o">=</span> <span class="nv">RecPid</span><span class="p">},</span>
+</span><span class='line'><span class="k">case</span> <span class="nv">Module</span><span class="p">:</span><span class="nf">start</span><span class="p">({</span><span class="o">?</span><span class="nv">MODULE</span><span class="p">,</span> <span class="nv">SocketData</span><span class="p">},</span> <span class="nv">Opts</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">ok</span><span class="p">,</span> <span class="nv">Pid</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">SockMod</span><span class="p">:</span><span class="nf">controlling_process</span><span class="p">(</span><span class="nv">Socket</span><span class="p">,</span> <span class="nv">Receiver</span><span class="p">)</span> <span class="k">of</span>
+</span><span class='line'>        <span class="nv">ReceiverMod</span><span class="p">:</span><span class="nf">become_controller</span><span class="p">(</span><span class="nv">Receiver</span><span class="p">,</span> <span class="nv">Pid</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">{</span><span class="n">error</span><span class="p">,</span> <span class="p">_</span><span class="nv">Reason</span><span class="p">}</span> <span class="o">-</span><span class="err">&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'>        <span class="nv">ReceiverMod</span><span class="p">:</span><span class="nf">close</span><span class="p">(</span><span class="nv">Receiver</span><span class="p">);</span>
+</span><span class='line'><span class="k">end</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>When a new socket is accepted, ejabberd_socket:start/4 is invoked to handle the socket events. ejabberd (brightly) splitted this task into two subtasks: one is to handle all the data transmition(sending and receiving, encapsulating the low-level socket implementation), the other is to parse and handle the message corresponding to the data. Hence, as we see here, a receiver process (ReceiverMod) and a logic handling process (Module) are spawned. The receiver module defaults to ejabberd_receiver, which receives XML stanzas and forwards the stanzas to the logic module. The logic module, on the other hand, may be ejabberd_c2s.erl or ejabberd_s2s depending for different tasks.</p>
+
+<p>What &lsquo;SockMod:controlling_process(Socket, Receiver)&rsquo; does is to direct all data sent to the socket to the receiver mod, which then can handle all the incoming data. After the logic module starts, &lsquo;ReceiverMod:become_controller(Receiver, Pid)&rsquo; is called to let the receiver know where to forward incoming message to.</p>
+
+<p>In a word, ejabberd starts a receiver and a handler when a socket is accepted, the receiver handles all incoming data, does some preprocessing(such as parsing the XML) and forward the message to the handler, the handler decides how to handle the message, and (maybe) use the ejabberd_socket util to send response data. If you want to extend the ejabberd to use other protocols than XMPP: this is the place to start. Write a customized receiver module to parse the protocol, a customized handler module to handle all the requests and you are done. More on this topic later.</p>
+
+<h2>To sum up</h2>
+
+<p>We have taken a quick tour through the socket infrastructure in ejabberd. We learned that the ejabberd uses three modules: ejabberd_listener, ejabberd_socket and ejabberd_receiver to handle all the socket related stuff. ejabberd_listener binds and listens on ports, ejabberd_socket starts the receiver and the handler, and provides utils for outgoing data, the receiver handles and parses all incoming data, and forwards messages to the logic module. The logics, on the other handle, are handled by logic modules accroding to the config file. There are, however, many things that we left out, including:</p>
+
+<ol>
+<li>customization of receiver/logic modules.</li>
+<li>congestion control (shapers).</li>
+<li>how the logic modules interacts with the socket infrastructure.</li>
+</ol>
+
+
+<p>So get your hands on the code piece by piece, make discoveries, and have fun! :)</p>
+]]></content>
+  </entry>
+  
+</feed>

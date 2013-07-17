@@ -1,0 +1,309 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>The Architecture of Ejabberd - Hacking is great fun.</title>
+  <meta name="author" content="Chi Zhang">
+
+  
+  <meta name="description" content="We have taken a quick tour through the socket infrastructure provided with ejabberd, and wrote a few listeners as an exercise. This time let&rsquo;s &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Hacking is great fun." type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Hacking is great fun.</a></h1>
+  
+    <h2>You can do anything you set your mind to.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:eshock.github.io/ejabberd" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="https://github.com/eshock">Repo</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">The Architecture of Ejabberd</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-06-06T17:39:00+08:00" pubdate data-updated="true">Jun 6<span>th</span>, 2012</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>We have taken a quick tour through the socket infrastructure provided with ejabberd, and wrote a few listeners as an exercise. This time let&rsquo;s take a look at the ejabberd as a whole and try to figure out what it is about.</p>
+
+<h2>Overview</h2>
+
+<p><img src="/images/ejabberd_overview.png" title="Ejabberd Overview" alt="The ejabberd architecture overview" /></p>
+
+<p>Like many servers, ejabberd can inherently be broken up into three layers:</p>
+
+<ul>
+<li><em>The Data Layer.</em> This layer handles how data get stored in databases, and ensures the integrity and constraints of data.</li>
+<li><em>The Logic Layer.</em> This layer is the most complicated of all. It handles all the XMPP logics, as well as many other features, e.g.: http bindings, access controls, extensible modules and hooks, etc.</li>
+<li><em>The Interface Layer.</em> This is the layer we have just talked about. It handles all the incoming data from and the outgoing data to the client.</li>
+</ul>
+
+
+<h2>The Data Layer</h2>
+
+<p>Ejabberd primarily use <a href="http://www.erlang.org/doc/man/mnesia.html">mnesia</a> as its &ldquo;database&rdquo;. Mnesia is in fact a high-performance key-value pair storage system built into the erlang library. It provides many features such as:</p>
+
+<ul>
+<li>Replication. Tables may be replicated at several nodes.</li>
+<li>Atomic transactions. A series of table manipulation operations can be grouped into a single atomic transaction.</li>
+<li>Location transparency. Programs can be written without knowledge of the actual location of data.</li>
+<li>Extremely fast real time data searches.</li>
+</ul>
+
+
+<p>Some of its features, such as replication and realtime searches, make it eligible for an extremely extensible database system. However, ejabberd does not enforce its use; it provides ODBC interfaces to allow utilizing of other databases whenever possible. For example, sometimes it might be more convienient to allow the user to authenticate using data stored in an existing database server, or there may be some relational data that need to be used for some purpose. Generally, mnesia is suitable for real fast key-value searches, but performs pretty badly when you use it for &ldquo;relational&rdquo; lookups (using the mnesia:select the wrong way). Avoid relational data whenever possible (use key lookup) if you want to make good use of it.</p>
+
+<h2>The Logic Layer</h2>
+
+<p>The logic layer is the main and most import part of the ejabberd system. Some of its functionalities include:</p>
+
+<ul>
+<li><em>Jabber Logics.</em> The client to server connection (typically on tcp/5222) is handled by the module ejabberd_c2s. The server to server connection (typically on tcp/5269) is handled by the modules ejabberd_s2s, ejabberd_s2s_in, ejabber_s2s_out. The HTTP bindings are handled by the ejabberd_http module.</li>
+<li><em>Router.</em> The router handles the routing of most of the messages, i.e., when a Jabber client sends a <message> to another entity, how is the message routed to the correct destination? First ejabberd determines whether the message is a local or a remote one. It does so by looking at the &ldquo;to&rdquo; attribute to see if the host implied by the &ldquo;to&rdquo; attribute is hosted in itself. If so, the message is local; and is handled by ejabberd_local; otherwise it is treated as an s2s message.</li>
+<li><em>Modules.</em> In additional to the core Jabber and Router logics, there is a large part of the ejabberd which can be plugged in only when necessary, and they are called <em>modules</em>. Modules can be started / stopped dynamically at any time, thus making the ejabberd server highly extensible even at runtime. Modules are widely used for various <iq> extensions (the so-called &lsquo;XEP&rsquo;s).</li>
+<li><em>Hooks</em>. You want to change the core logics in the ejabberd server? No problem. Hooks are everywhere to help you. A hook is a way by which you can change the behaviour of ejabberd by injecting your new code into the system, without changing any existing code. For example, if you want to roll up your message filter to filter out messages you don&rsquo;t want, you can add a module hooking to the &ldquo;filter_packet/3&rdquo; hook. If you want to keep track of all the messages clients sent, you can write a function hooking to &lsquo;user_send_packet/3&rsquo;.</li>
+<li><em>Access Control.</em> All users (including real jabber client users as well as  administrators) are stored the same way in ejabberd. Their privileges are determined by the <em>groups</em> they belong to. Hence, the access control modules in ejabberd allow us to distinguish users with their groups, thus providing different services for different users.</li>
+<li><em>Utils and Libraries.</em> Some other libraries and utils exist in ejabberd for common purposes, e.g.: XML processing, SASL authentication, Encodings, Logger, etc. It is worth noting the ejabberd_logger is a very good logger module perfectly usable by any other projects.</li>
+</ul>
+
+
+<h2>The Interface Layer</h2>
+
+<p>This layer handles incoming data from and outgoing data from the client. Its main functionaly is to listen on a local port waiting for client connections, establish a connection any clients or servers when necessary, and exchange data. It supports TCP/TLS connections as well as UDP transport, as is described in our last discussions. It serves as the interface between the outer world and the ejabberd server.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Chi Zhang</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-06-06T17:39:00+08:00" pubdate data-updated="true">Jun 6<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ejabberd/'>ejabberd</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd/" data-via="xia0pang" data-counturl="http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams/" title="Previous Post: More on Echo Service: Using TLS and XML Streams">&laquo; More on Echo Service: Using TLS and XML Streams</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/04/29/two-sum/" title="Next Post: Two Sum">Two Sum &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/04/29/two-sum/">Two Sum</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/06/06/the-architecture-of-ejabberd/">The Architecture of Ejabberd</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams/">More on Echo Service: Using TLS and XML Streams</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/25/writing-a-simple-echo-service-module/">Writing a Simple Echo Service Module</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure/">The Ejabberd Socket Infrastructure</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Chi Zhang -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'eshockgithubio';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd/';
+        var disqus_url = 'http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

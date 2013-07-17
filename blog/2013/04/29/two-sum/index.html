@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Two Sum - Hacking is great fun.</title>
+  <meta name="author" content="Chi Zhang">
+
+  
+  <meta name="description" content="Problem Given an array of integers, find two numbers such that they add up to a specific target number. The function twoSum should return indices of &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://eshock.github.io/ejabberd/blog/2013/04/29/two-sum">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Hacking is great fun." type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Hacking is great fun.</a></h1>
+  
+    <h2>You can do anything you set your mind to.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:eshock.github.io/ejabberd" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="https://github.com/eshock">Repo</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Two Sum</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-29T15:47:00+08:00" pubdate data-updated="true">Apr 29<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>Problem</h2>
+
+<p>Given an array of integers, find two numbers such that they add up to a specific target number.</p>
+
+<p>The function twoSum should return indices of the two numbers such that they add up to the target, where index1 must be less than index2. Please note that your returned answers (both index1 and index2) are not zero-based.</p>
+
+<p>You may assume that each input would have exactly one solution.</p>
+
+<p><strong>Input</strong>: numbers={2, 7, 11, 15}, target=9</p>
+
+<p><strong>Output</strong>: index1=1, index2=2</p>
+
+<h2>Discussion</h2>
+
+<p>This is a classical problem. One solution is like this: first sort it, then for every element x in the array, binary search for its complement (target &ndash; x).</p>
+
+<p>This solution can be improved without using the binary search. In a sorted array, consider the following algorithm:</p>
+
+<pre><code>Initially i = 0, j = n-1. 
+while a[i] + a[j] != target:
+    If a[i] + a[j] &lt; target: 
+        // the sum must increase
+        i = i + 1
+    else if a[i] + a[j] &gt; target: 
+        // the sum must decrease 
+        j = j - 1 
+</code></pre>
+
+<p>Why does this algorithm work? It seems obvious but it takes time to prove it correct. Look at the graph below:</p>
+
+<p><img src="/images/twosum.png" title="the loop invarience" alt="the loop invarience" /></p>
+
+<p>We have the invariance: for any 0 &lt;= x &lt; i and j &lt; y &lt; n, a[x] + a[y] != target. Initially i = 0, j = n-1 and this is true. Next we want to prove when a[i] + a[j] &lt; target, then for any 0 &lt;= x &lt; i+1 and j &lt; y &lt; n, a[x] + a[y] != target. If x &lt; i, this is true due to the invariance before the iteration. If x = i, notice for j to be here, there must be some number 0 &lt;= x0 &lt; i such that a[x0] + a[j+1] > target. Hence, a[i] + a[y] >= a[x0] + a[j+1] > target. This means, for x = i, a[x] + a[y] != target. Thus for any 0 &lt;= x &lt; i+1 and j &lt; y &lt; n, a[x] + a[y] != target, the invariance is kept.</p>
+
+<p>Similarly we can prove that when a[i] + a[j] > target, then for any 0 &lt;= x &lt; i and j &ndash; 1 &lt; y &lt; n, a[x] + a[y] != target. The invariance, together with the loop guard a[i] + a[j] != target, implies a[i] + a[j] = target when the loop terminates.</p>
+
+<p>Bear in mind that the program must return the indices in the <strong>original</strong> array, not the indices in the sorted one. Hence we must find the original indices for a[i] and  a[j]. There is a &ldquo;gotcha&rdquo; here, consider the following code for finding the original index:</p>
+
+<figure class='code'><figcaption><span>find original index </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>    
+</span><span class='line'>  <span class="kt">int</span> <span class="n">index1</span><span class="p">,</span> <span class="n">index2</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">sorted</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">numbers</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">index1</span> <span class="o">=</span> <span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// notice index1 and index2 are NOT zero-based.</span>
+</span><span class='line'>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">sorted</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">numbers</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">index2</span> <span class="o">=</span> <span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>What&rsquo;s the problem here? If we have [25, 25, 10] and the target 50, both the index1 and index2 will be 2! Hence we  restrict index1 to be assigned only once, and thus index1 != index2 is satisfied.</p>
+
+<h2>Solution</h2>
+
+<figure class='code'><figcaption><span>TwoSum </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">class</span> <span class="n">Solution</span> <span class="p">{</span>
+</span><span class='line'><span class="nl">public:</span>
+</span><span class='line'>    <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">twoSum</span><span class="p">(</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="o">&amp;</span><span class="n">numbers</span><span class="p">,</span> <span class="kt">int</span> <span class="n">target</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Start typing your C/C++ solution below</span>
+</span><span class='line'>        <span class="c1">// DO NOT write int main() function</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// create a sorted copy</span>
+</span><span class='line'>        <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">sorted</span><span class="p">(</span><span class="n">numbers</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">numbers</span><span class="p">.</span><span class="n">end</span><span class="p">());</span>
+</span><span class='line'>        <span class="n">sort</span><span class="p">(</span><span class="n">sorted</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">sorted</span><span class="p">.</span><span class="n">end</span><span class="p">());</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// initialization</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">sorted</span><span class="p">.</span><span class="n">size</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">sum</span><span class="p">;</span>
+</span><span class='line'>        <span class="c1">// invariance: sorted[x] + sorted[y] != target for all 0 &lt; x &lt; i and  j &lt; y &lt; n</span>
+</span><span class='line'>        <span class="k">while</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">j</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">sum</span> <span class="o">=</span> <span class="n">sorted</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">sorted</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">!=</span> <span class="n">target</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">sum</span> <span class="o">&lt;</span> <span class="n">target</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>                <span class="c1">// sum &gt; target</span>
+</span><span class='line'>                <span class="n">j</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// sorted[i] + sorted[j] == target</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">index1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">index2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// this way , we can ensure index1 != index2 even when sorted[i] == sorted[j]</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">index1</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">sorted</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">numbers</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">index1</span> <span class="o">=</span> <span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span> <span class="c1">// notice index1 and index2 are NOT zero-based.</span>
+</span><span class='line'>            <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">sorted</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">numbers</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">index2</span> <span class="o">=</span> <span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">index1</span> <span class="o">&gt;</span> <span class="n">index2</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">swap</span><span class="p">(</span><span class="n">index1</span><span class="p">,</span> <span class="n">index2</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">index1</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">index2</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>  
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Chi Zhang</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-29T15:47:00+08:00" pubdate data-updated="true">Apr 29<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/leetcode/'>leetcode</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://eshock.github.io/ejabberd/blog/2013/04/29/two-sum/" data-via="xia0pang" data-counturl="http://eshock.github.io/ejabberd/blog/2013/04/29/two-sum/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/06/06/the-architecture-of-ejabberd/" title="Previous Post: The Architecture of Ejabberd">&laquo; The Architecture of Ejabberd</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/04/29/two-sum/">Two Sum</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/06/06/the-architecture-of-ejabberd/">The Architecture of Ejabberd</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/29/more-on-echo-service-using-tls-and-xml-streams/">More on Echo Service: Using TLS and XML Streams</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/25/writing-a-simple-echo-service-module/">Writing a Simple Echo Service Module</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure/">The Ejabberd Socket Infrastructure</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Chi Zhang -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'eshockgithubio';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://eshock.github.io/ejabberd/blog/2013/04/29/two-sum/';
+        var disqus_url = 'http://eshock.github.io/ejabberd/blog/2013/04/29/two-sum/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
