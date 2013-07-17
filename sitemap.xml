@@ -1,16 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
-        <loc>http://eshock.github.io/ejabberd/blog/2012/05/21/hello-world/</loc>
-        <lastmod>2013-07-17T16:34:52+08:00</lastmod>
-    </url>
-    <url>
-        <loc>
-            http://eshock.github.io/ejabberd/blog/2012/05/22/how-to-set-up-octopress-with-github-on-mac-os-x/
-        </loc>
-        <lastmod>2013-07-17T16:34:52+08:00</lastmod>
-    </url>
-    <url>
         <loc>
             http://eshock.github.io/ejabberd/blog/2012/05/23/ejabberd-notes-the-listener-infrastructure/
         </loc>
@@ -30,10 +20,6 @@
     </url>
     <url>
         <loc>http://eshock.github.io/ejabberd/blog/2012/06/06/the-architecture-of-ejabberd/</loc>
-        <lastmod>2013-07-17T16:34:52+08:00</lastmod>
-    </url>
-    <url>
-        <loc>http://eshock.github.io/ejabberd/blog/2013/04/29/two-sum/</loc>
         <lastmod>2013-07-17T16:34:52+08:00</lastmod>
     </url>
     <url>
